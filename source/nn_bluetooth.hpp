@@ -304,9 +304,9 @@ namespace nn::bluetooth
     Result RegisterLeClient(GattAttributeUuid const* uuid);
     Result UnregisterLeClient(u8 id);
     Result UnregisterLeClientAll();
+    // AppletResourceUserId seems unused
     Result LeClientConnect(nn::applet::AppletResourceUserId const& uid, u8 id, Address const* address, bool unk);
-    Result LeClientConnect(u8 id, Address const* address, bool unk);
-    Result LeClientCancelConnection(u8, Address const* address, bool);
+    Result LeClientCancelConnection(u8 id, Address const* address, bool unk);
     Result LeClientDisconnect(u32);
     Result LeClientGetAttributes(u32, Address const* address);
     Result LeClientDiscoverService(u32, GattAttributeUuid);

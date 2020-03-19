@@ -628,7 +628,7 @@ namespace nn::bluetooth
         return btdrvDispatchIn(65, in);
     }
 
-    Result LeClientConnect(u8 id, Address const* address, bool unk)
+    Result LeClientCancelConnection(u8 id, Address const* address, bool unk)
     {
         //TODO: test
         struct
@@ -638,7 +638,7 @@ namespace nn::bluetooth
             bool unk;
         } in = {id, *address, unk};
 
-        static_assert(sizeof(in) == 8, "LeClientConnect_0: Bad Input");
+        static_assert(sizeof(in) == 8, "LeClientCancelConnection: Bad Input");
 
         return btdrvDispatchIn(66, in);
     }
