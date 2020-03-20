@@ -307,13 +307,15 @@ namespace nn::bluetooth
     // AppletResourceUserId seems unused
     Result LeClientConnect(nn::applet::AppletResourceUserId const& uid, u8 id, Address const* address, bool unk);
     Result LeClientCancelConnection(u8 id, Address const* address, bool unk);
-    Result LeClientDisconnect(u32);
-    Result LeClientGetAttributes(u32, Address const* address);
-    Result LeClientDiscoverService(u32, GattAttributeUuid);
-    Result LeClientConfigureMtu(u32, u16);
-    Result RegisterLeServer(GattAttributeUuid);
-    Result UnregisterLeServer(u8);
-    Result LeServerConnect(u8, Address const* address, bool);
+    // I don't actually know what the s32 means. It just searches for the client that has the same variable
+    Result LeClientDisconnect(s32 clientState);
+    Result LeClientGetAttributes(s32 clientState, Address const* address);
+    Result LeClientDiscoverService(s32 clientState, GattAttributeUuid const& uuid);
+    Result LeClientConfigureMtu(s32 clientState, u16 mtu);
+    Result RegisterLeServer(GattAttributeUuid const& uuid);
+    Result UnregisterLeServer(u8 serverId);
+    Result LeServerConnect(u8 serverId, Address const* address, bool connectBool);
+    //TODO: everything below
     Result LeServerDisconnect(u8, Address const* address);
     Result CreateLeService(u8, GattAttributeUuid, u8, bool);
     Result StartLeService(u8, GattAttributeUuid);

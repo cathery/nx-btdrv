@@ -643,4 +643,73 @@ namespace nn::bluetooth
         return btdrvDispatchIn(66, in);
     }
 
+    Result LeClientDisconnect(s32 clientState)
+    {
+        //TODO: test
+        return btdrvDispatchIn(67, clientState);
+    }
+
+    Result LeClientGetAttributes(s32 clientState, Address const* address)
+    {
+        //TODO: test
+        return btdrvDispatchIn(68, clientState);
+    }
+
+    Result LeClientDiscoverService(s32 clientState, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            s32 clientState;
+            GattAttributeUuid uuid;
+        } in = {clientState, uuid};
+
+        static_assert(sizeof(in) == 0x18, "LeClientDiscoverService: Bad Input");
+
+        return btdrvDispatchIn(69, in);
+    }
+
+    Result LeClientConfigureMtu(s32 clientState, u16 mtu)
+    {
+        //TODO: test
+        struct
+        {
+            u16 mtu;
+            s32 clientState;
+        } in = {clientState, mtu};
+
+        static_assert(sizeof(in) == 8, "LeClientConfigureMtu: Bad Input");
+
+        return btdrvDispatchIn(70, in);
+    }
+
+    Result RegisterLeServer(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "RegisterLeServer: Bad Input");
+
+        return btdrvDispatchIn(71, uuid);
+    }
+
+    Result UnregisterLeServer(u8 serverId)
+    {
+        //TODO: test
+        return btdrvDispatchIn(72, serverId);
+    }
+
+    Result LeServerConnect(u8 serverId, Address const* address, bool connectBool)
+    {
+        //TODO: test
+        struct
+        {
+            u8 serverId;
+            Address address;
+            bool connectBool;
+        } in = {serverId, *address, connectBool};
+
+        static_assert(sizeof(in) == 8, "LeServerConnect: Bad Input");
+
+        return btdrvDispatchIn(73, in);
+    }
+
 } // namespace nn::bluetooth
