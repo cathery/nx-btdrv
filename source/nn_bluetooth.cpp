@@ -213,17 +213,14 @@ namespace nn::bluetooth
             .buffers = {{out, sizeof(HidData)}});
     }
 
-    Result HidSendData(Address const* address, u8 const* outBuffer, u16 bufferSize)
+    Result HidSendData2(Address const* address, HidData const* out)
     {
         //TODO: make sure the buffer is sent correctly
-        HidData data{};
-        data.size = bufferSize;
-        memcpy(data.buffer, outBuffer, bufferSize);
 
         return btdrvDispatchIn(
             20, *address,
             .buffer_attrs = {SfBufferAttr_In | SfBufferAttr_HipcPointer},
-            .buffers = {{&data, sizeof(data)}});
+            .buffers = {{out, sizeof(HidData)}});
     }
 
     Result HidSetReport(Address const* address, BluetoothHhReportType reportType, HidData const* buffer)
@@ -676,7 +673,7 @@ namespace nn::bluetooth
         {
             u16 mtu;
             s32 clientState;
-        } in = {clientState, mtu};
+        } in = {mtu, clientState};
 
         static_assert(sizeof(in) == 8, "LeClientConfigureMtu: Bad Input");
 
@@ -710,6 +707,225 @@ namespace nn::bluetooth
         static_assert(sizeof(in) == 8, "LeServerConnect: Bad Input");
 
         return btdrvDispatchIn(73, in);
+    }
+
+    Result LeServerDisconnect(u8 serverId, Address const* address)
+    {
+        //TODO: test
+        return btdrvDispatchIn(74, serverId);
+    }
+
+    Result CreateLeService(u8 serverId, GattAttributeUuid const& uuid, u8 unk, bool connectBool)
+    {
+        //TODO: test
+        struct
+        {
+            u8 serverId;
+            u8 unk;
+            bool connectBool;
+            GattAttributeUuid uuid;
+        } in = {serverId, unk, connectBool, uuid};
+
+        static_assert(sizeof(in) == 0x18, "CreateLeService: Bad Input");
+
+        return btdrvDispatchIn(75, in);
+    }
+
+    Result StartLeService(u8 serverId, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            u8 serverId;
+            GattAttributeUuid uuid;
+        } in = {serverId, uuid};
+
+        static_assert(sizeof(in) == 0x18, "StartLeService: Bad Input");
+
+        return btdrvDispatchIn(76, in);
+    }
+
+    Result AddLeCharacteristic(u8 serverId, GattAttributeUuid const& uuid, GattAttributeUuid const& uuid2, u16 unk, u8 unk2)
+    {
+        //TODO: test
+        struct
+        {
+            u8 serverId;
+            u8 unk2;
+            u16 unk;
+            GattAttributeUuid uuid;
+            GattAttributeUuid uuid2;
+        } in = {serverId, unk2, unk, uuid, uuid2};
+
+        static_assert(sizeof(in) == 0x2C, "AddLeCharacteristic: Bad Input");
+
+        return btdrvDispatchIn(77, in);
+    }
+
+    Result AddLeDescriptor(u8 serverId, GattAttributeUuid const& uuid, GattAttributeUuid const& uuid2, u16 unk)
+    {
+        //TODO: test
+        struct
+        {
+            u8 serverId;
+            u16 unk;
+            GattAttributeUuid uuid;
+            GattAttributeUuid uuid2;
+        } in = {serverId, unk, uuid, uuid2};
+
+        static_assert(sizeof(in) == 0x2C, "AddLeDescriptor: Bad Input");
+        return btdrvDispatchIn(78, in);
+    }
+
+    Result GetLeCoreEventInfo(BleEventType* outEvent, LeCoreEventInfo* outInfo)
+    {
+        //TODO: test
+        static_assert(sizeof(LeCoreEventInfo) == 0x400, "GetLeCoreEventInfo: Bad Input");
+        return btdrvDispatchOut(
+            79, *outEvent,
+            .buffer_attrs = {SfBufferAttr_Out | SfBufferAttr_HipcPointer},
+            .buffers = {{outInfo, sizeof(LeCoreEventInfo)}});
+    }
+
+    Result LeGetFirstCharacteristic(GattId* outId, u8* outByte, u32 unk, GattId const& gattId, bool unk2, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk2;
+            u32 unk;
+            GattId gattId;
+            GattAttributeUuid uuid;
+        } in = {unk2, unk, gattId, uuid};
+
+        struct
+        {
+            u8 byte;
+            GattId id;
+        } out;
+
+        static_assert(sizeof(in) == 0x34, "LeGetFirstCharacteristic: Bad Input");
+        static_assert(sizeof(out) == 0x1C, "LeGetFirstCharacteristic: Bad Output");
+
+        Result rc = btdrvDispatchInOut(80, in, out);
+
+        if (R_SUCCEEDED(rc))
+        {
+            *outId = out.id;
+            *outByte = out.byte;
+        }
+
+        return rc;
+    }
+
+    Result LeGetNextCharacteristic(GattId* outId, u8* outByte, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk2;
+            u32 unk;
+            GattId id;
+            GattId id2;
+            GattAttributeUuid uuid;
+        } in = {unk2, unk, gattId, gattId2, uuid};
+
+        struct
+        {
+            u8 byte;
+            GattId id;
+        } out;
+        static_assert(sizeof(in) == 0x4C, "LeGetNextCharacteristic: Bad Input");
+        static_assert(sizeof(out) == 0x1C, "LeGetNextCharacteristic: Bad Output");
+
+        Result rc = btdrvDispatchInOut(81, in, out);
+
+        if (R_SUCCEEDED(rc))
+        {
+            *outId = out.id;
+            *outByte = out.byte;
+        }
+
+        return rc;
+    }
+
+    Result LeGetFirstDescriptor(GattId* out, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk2;
+            u32 unk;
+            GattId id;
+            GattId id2;
+            GattAttributeUuid uuid;
+        } in = {unk2, unk, gattId, gattId2, uuid};
+
+        static_assert(sizeof(in) == 0x4C, "LeGetFirstDescriptor: Bad Input");
+        static_assert(sizeof(GattId) == 0x18, "LeGetFirstDescriptor: Bad Output");
+
+        return btdrvDispatchInOut(82, in, *out);
+    }
+
+    Result LeGetNextDescriptor(GattId* out, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattId const& gattId3, GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk2;
+            u32 unk;
+            GattId id;
+            GattId id2;
+            GattId id3;
+            GattAttributeUuid uuid;
+        } in = {unk2, unk, gattId, gattId2, gattId3, uuid};
+
+        static_assert(sizeof(in) == 0x64, "LeGetNextDescriptor: Bad Input");
+        static_assert(sizeof(GattId) == 0x18, "LeGetNextDescriptor: Bad Output");
+
+        return btdrvDispatchInOut(83, in, *out);
+    }
+
+    Result RegisterLeCoreDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "RegisterLeCoreDataPath: Bad Input");
+        return btdrvDispatchIn(84, uuid);
+    }
+
+    Result UnregisterLeCoreDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "UnregisterLeCoreDataPath: Bad Input");
+        return btdrvDispatchIn(85, uuid);
+    }
+
+    Result RegisterLeHidDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "RegisterLeHidDataPath: Bad Input");
+        return btdrvDispatchIn(86, uuid);
+    }
+
+    Result UnregisterLeHidDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "UnregisterLeHidDataPath: Bad Input");
+        return btdrvDispatchIn(87, uuid);
+    }
+
+    Result RegisterLeDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "RegisterLeDataPath: Bad Input");
+        return btdrvDispatchIn(88, uuid);
+    }
+
+    Result UnregisterLeDataPath(GattAttributeUuid const& uuid)
+    {
+        //TODO: test
+        static_assert(sizeof(uuid) == 0x14, "UnregisterLeDataPath: Bad Input");
+        return btdrvDispatchIn(89, uuid);
     }
 
 } // namespace nn::bluetooth

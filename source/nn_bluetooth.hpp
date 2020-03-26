@@ -56,7 +56,7 @@ namespace nn::os
         Mutex sectionImpl;
         CondVar condvar;
         u32 unk;
-        u8 unk_byte_two;
+        u8 unku8_two;
     };
 
 } // namespace nn::os
@@ -188,13 +188,39 @@ namespace nn::bluetooth
         }
     };
 
-    struct BleEventType
+    typedef u32 BleEventType;
+
+    struct PACKED LeCoreEventInfo
     {
+        u32 dword0;
+        u32 dword4;
+        u64 qword8;
+        u64 qword10;
+        u32 dword14;
+        u32 dword18;
+        u64 qword20;
+        u64 qword28;
+        u32 dword30;
+        u64 qword34;
+        u64 qword3C;
+        u32 dword44;
+        u16 word48;
+        u8 gap0[249];
+        u8 byte143;
+        u32 dword144;
+        u8 gap1[202];
+        u16 word212;
+        u16 word214;
+        u8 gap2[490];
     };
 
     //Not necessarily a struct
     struct GattId
     {
+        u8 byte0;
+        u8 gap[3];
+        u32 length;
+        u8 id[16];
     };
 
     typedef u32 BluetoothTransport;
@@ -248,7 +274,7 @@ namespace nn::bluetooth
     Result HidConnect(Address const* address);
     Result HidDisconnect(Address const* address);
     Result HidSendData(Address const* address, HidData const* data);
-    Result HidSendData(Address const* address, u8 const* buffer, u16 size);
+    Result HidSendData2(Address const* address, HidData const* out);
     Result HidSetReport(Address const* address, BluetoothHhReportType reportType, HidData const* buffer);
     Result HidGetReport(Address const* address, BluetoothHhReportType reportType, u8 unk);
     Result HidWakeController(Address const* address, u16 propSetting);
@@ -315,23 +341,24 @@ namespace nn::bluetooth
     Result RegisterLeServer(GattAttributeUuid const& uuid);
     Result UnregisterLeServer(u8 serverId);
     Result LeServerConnect(u8 serverId, Address const* address, bool connectBool);
-    //TODO: everything below
-    Result LeServerDisconnect(u8, Address const* address);
-    Result CreateLeService(u8, GattAttributeUuid, u8, bool);
-    Result StartLeService(u8, GattAttributeUuid);
-    Result AddLeCharacteristic(u8, GattAttributeUuid, GattAttributeUuid, u16, u8);
-    Result AddLeDescriptor(u8, GattAttributeUuid, GattAttributeUuid, u16);
-    Result GetLeCoreEventInfo(BleEventType*, u8* buffer, u16 unk);
-    Result LeGetFirstCharacteristic(GattId*, u8* buffer, u32, GattId, bool, GattAttributeUuid);
-    Result LeGetNextCharacteristic(GattId*, u8* buffer, u32, GattId, bool, GattAttributeUuid);
-    Result LeGetFirstDescriptor(GattId*, u32, GattId, bool, GattId, GattAttributeUuid);
-    Result LeGetNextDescriptor(GattId*, u32, GattId, bool, GattId, GattId, GattAttributeUuid);
-    Result RegisterLeCoreDataPath(GattAttributeUuid const&);
-    Result UnregisterLeCoreDataPath(GattAttributeUuid const&);
-    Result RegisterLeHidDataPath(GattAttributeUuid const&);
-    Result UnregisterLeHidDataPath(GattAttributeUuid const&);
-    Result RegisterLeDataPath(GattAttributeUuid const&);
-    Result UnregisterLeDataPath(GattAttributeUuid const&);
+    // address is unused on [9.0.0+]
+    Result LeServerDisconnect(u8 serverId, Address const* address);
+    Result CreateLeService(u8 serverId, GattAttributeUuid const& uuid, u8 unk, bool connectBool);
+    Result StartLeService(u8 serverId, GattAttributeUuid const& uuid);
+    Result AddLeCharacteristic(u8 serverId, GattAttributeUuid const& uuid, GattAttributeUuid const& uuid2, u16 unk, u8 unk2);
+    Result AddLeDescriptor(u8 serverId, GattAttributeUuid const& uuid, GattAttributeUuid const& uuid2, u16 unk);
+    Result GetLeCoreEventInfo(BleEventType* outEvent, LeCoreEventInfo* outInfo);
+    Result LeGetFirstCharacteristic(GattId* outId, u8* outByte, u32 unk, GattId const& gattId, bool unk2, GattAttributeUuid const& uuid);
+    Result LeGetNextCharacteristic(GattId* outId, u8* outByte, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattAttributeUuid const& uuid);
+    Result LeGetFirstDescriptor(GattId* out, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattAttributeUuid const& uuid);
+    Result LeGetNextDescriptor(GattId* out, u32 unk, GattId const& gattId, bool unk2, GattId const& gattId2, GattId const& gattId3, GattAttributeUuid const& uuid);
+    Result RegisterLeCoreDataPath(GattAttributeUuid const& uuid);
+    Result UnregisterLeCoreDataPath(GattAttributeUuid const& uuid);
+    Result RegisterLeHidDataPath(GattAttributeUuid const& uuid);
+    Result UnregisterLeHidDataPath(GattAttributeUuid const& uuid);
+    Result RegisterLeDataPath(GattAttributeUuid const& uuid);
+    Result UnregisterLeDataPath(GattAttributeUuid const& uuid);
+    //TODO: implement these
     Result RegisterBleHidEvent(nn::os::SystemEventType*);
     Result GetLeHidEventInfo(BleEventType*, u8*, u16);
     Result LeClientReadCharacteristic(u32, GattId, bool, GattId, u8);
