@@ -47,19 +47,6 @@ namespace nn::bluetooth
         serviceClose(&btdrv);
     }
 
-    Result EmulateBluetoothCrash(BluetoothFatalReason reason)
-    {
-        static_assert(sizeof(reason) == 0x4, "EmulateBluetoothCrash: Bad Input");
-
-        return btdrvDispatchIn(257, reason);
-    }
-
-    bool GetIsManufacturingMode()
-    {
-        //TODO
-        return false;
-    }
-
     Result InitializeBluetooth(Event* outEvent)
     {
         return _btdrvGetEvent(outEvent, false, 1);
@@ -926,6 +913,160 @@ namespace nn::bluetooth
         //TODO: test
         static_assert(sizeof(uuid) == 0x14, "UnregisterLeDataPath: Bad Input");
         return btdrvDispatchIn(89, uuid);
+    }
+
+    Result LeClientReadCharacteristic(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, u8 unk2)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u8 unk2;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+        } in = {unk, unk2, connectedState, gattId, gattId2};
+
+        static_assert(sizeof(in) == 0x38, "LeClientReadCharacteristic: Bad Input");
+        return btdrvDispatchIn(90, in);
+    }
+
+    Result LeClientReadDescriptor(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, GattId const& gattId3, u8 unk2)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u8 unk2;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+            GattId gattId3;
+        } in = {unk, unk2, connectedState, gattId, gattId2, gattId3};
+
+        static_assert(sizeof(in) == 0x50, "LeClientReadDescriptor: Bad Input");
+        return btdrvDispatchIn(91, in);
+    }
+
+    Result LeClientWriteCharacteristic(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, u8 const* buffer, u16 size, u8 unk2, bool unk3)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u8 unk2;
+            bool unk3;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+        } in = {unk, unk2, unk3, connectedState, gattId, gattId2};
+
+        static_assert(sizeof(in) == 0x38, "LeClientWriteCharacteristic: Bad Input");
+        return btdrvDispatchIn(
+            92, in,
+            .buffer_attrs = {SfBufferAttr_In | SfBufferAttr_HipcPointer},
+            .buffers = {{buffer, size}});
+    }
+
+    Result LeClientWriteDescriptor(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, GattId const& gattId3, u8 const* buffer, u16 size, u8 unk2)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u8 unk2;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+            GattId gattId3;
+        } in = {unk, unk2, connectedState, gattId, gattId2, gattId3};
+
+        static_assert(sizeof(in) == 0x50, "LeClientWriteDescriptor: Bad Input");
+        return btdrvDispatchIn(
+            93, in,
+            .buffer_attrs = {SfBufferAttr_In | SfBufferAttr_HipcPointer},
+            .buffers = {{buffer, size}});
+    }
+
+    Result LeClientRegisterNotification(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+        } in = {unk, connectedState, gattId, gattId2};
+
+        static_assert(sizeof(in) == 0x38, "LeClientRegisterNotification: Bad Input");
+        return btdrvDispatchIn(94, in);
+    }
+
+    Result LeClientDeregisterNotification(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2)
+    {
+        //TODO: test
+        struct
+        {
+            bool unk;
+            u32 connectedState;
+            GattId gattId;
+            GattId gattId2;
+        } in = {unk, connectedState, gattId, gattId2};
+
+        static_assert(sizeof(in) == 0x38, "LeClientDeregisterNotification: Bad Input");
+        return btdrvDispatchIn(95, in);
+    }
+
+    Result GetLeHidEventInfo(BleEventType* outEvent, u8* buffer, u16 size)
+    {
+        //TODO: test
+        // copies a struct of exactly 0x400 bytes
+        return btdrvDispatchOut(
+            96, *outEvent,
+            .buffer_attrs = {SfBufferAttr_Out | SfBufferAttr_HipcPointer},
+            .buffers = {{buffer, size}});
+    }
+
+    Result RegisterBleHidEvent(Event* outEvent)
+    {
+        //TODO: test
+        return _btdrvGetEvent(outEvent, false, 97);
+    }
+
+    Result SetLeScanParameter(u16 param1, u16 param2)
+    {
+        //TODO: test
+        struct
+        {
+            u16 param1;
+            u16 param2;
+        } in = {param1, param2};
+
+        static_assert(sizeof(in) == 4, "SetLeScanParameter: Bad Input");
+        return btdrvDispatchIn(98, in);
+    }
+
+    Result GetIsManufacturingMode(bool* out)
+    {
+        //TODO: test
+        return btdrvDispatchIn(256, *out);
+    }
+
+    Result EmulateBluetoothCrash(BluetoothFatalReason reason)
+    {
+        //TODO: test
+        static_assert(sizeof(reason) == 0x4, "EmulateBluetoothCrash: Bad Input");
+        return btdrvDispatchIn(257, reason);
+    }
+
+    Result GetBleChannelMap(u8* outBuffer, u16 size)
+    {
+        //TODO: test
+        return btdrvDispatch(
+            258,
+            .buffer_attrs = {SfBufferAttr_Out | SfBufferAttr_HipcMapAlias | SfBufferAttr_FixedSize},
+            .buffers = {{outBuffer, size}});
     }
 
 } // namespace nn::bluetooth

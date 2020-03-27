@@ -235,9 +235,11 @@ namespace nn::bluetooth
     Result InitializeBluetoothDriver();
     void FinalizeBluetoothDriver();
 
-    bool GetIsManufacturingMode();
+    Result GetIsManufacturingMode(bool* out);
 
     Result EmulateBluetoothCrash(BluetoothFatalReason reason);
+
+    Result GetBleChannelMap(u8* outBuffer, u16 size);
 
     Result InitializeBluetooth(Event* outEvent);
 
@@ -320,7 +322,7 @@ namespace nn::bluetooth
     Result SetLeAdvertiseParameter(Address const* address, u16 unk, u16 unk2);
     Result StartLeScan();
     Result StopLeScan();
-    Result SetLeScanParameter(u16, u16);
+    Result SetLeScanParameter(u16 param1, u16 param2);
     Result AddLeScanFilterCondition(BleAdvertiseFilter const* filter);
     Result DeleteLeScanFilterCondition(BleAdvertiseFilter const* filter);
     // there are 19 LE scan filters total, from 0 to 18
@@ -358,15 +360,14 @@ namespace nn::bluetooth
     Result UnregisterLeHidDataPath(GattAttributeUuid const& uuid);
     Result RegisterLeDataPath(GattAttributeUuid const& uuid);
     Result UnregisterLeDataPath(GattAttributeUuid const& uuid);
-    //TODO: implement these
-    Result RegisterBleHidEvent(nn::os::SystemEventType*);
-    Result GetLeHidEventInfo(BleEventType*, u8*, u16);
-    Result LeClientReadCharacteristic(u32, GattId, bool, GattId, u8);
-    Result LeClientReadDescriptor(u32, GattId, bool, GattId, GattId, u8);
-    Result LeClientWriteCharacteristic(u32, GattId, bool, GattId, u8 const* buffer, u16, u8, bool);
-    Result LeClientWriteDescriptor(u32, GattId, bool, GattId, GattId, u8 const* buffer, u16, u8);
-    Result LeClientRegisterNotification(u32, GattId, bool, GattId);
-    Result LeClientDeregisterNotification(u32, GattId, bool, GattId);
+    Result RegisterBleHidEvent(Event* outEvent);
+    Result GetLeHidEventInfo(BleEventType* outEvent, u8* buffer, u16 size);
+    Result LeClientReadCharacteristic(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, u8 unk2);
+    Result LeClientReadDescriptor(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, GattId const& gattId3, u8 unk2);
+    Result LeClientWriteCharacteristic(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, u8 const* buffer, u16 size, u8 unk2, bool unk3);
+    Result LeClientWriteDescriptor(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2, GattId const& gattId3, u8 const* buffer, u16 size, u8 unk2);
+    Result LeClientRegisterNotification(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2);
+    Result LeClientDeregisterNotification(u32 connectedState, GattId const& gattId, bool unk, GattId const& gattId2);
 
     namespace user
     {
