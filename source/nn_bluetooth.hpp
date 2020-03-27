@@ -272,7 +272,7 @@ namespace nn::bluetooth
 
     Result GetAdapterProperties(AdapterProperty* out);
 
-    // buffer and size get contatenated into a struct on the stack
+    // Depending on each BluetoothProperty, it will return a different buffer. See comments in BluetoothProperty
     Result GetAdapterProperty(BluetoothProperty type, u8* buffer, u16 size);
     Result SetAdapterProperty(BluetoothProperty type, const u8* buffer, u16 size);
 
@@ -298,7 +298,9 @@ namespace nn::bluetooth
     Result InitializeHid(Event* out, u16 unk);
     Result HidConnect(Address const* address);
     Result HidDisconnect(Address const* address);
+    // PROBABLY DOESN'T WORK
     Result HidSendData(Address const* address, HidData const* data);
+    // PROBABLY WORKS
     Result HidSendData2(Address const* address, HidData const* out);
     Result HidSetReport(Address const* address, BluetoothHhReportType reportType, HidData const* buffer);
     Result HidGetReport(Address const* address, BluetoothHhReportType reportType, u8 unk);
