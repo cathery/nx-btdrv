@@ -105,12 +105,35 @@ namespace nn::bluetooth
 
     typedef u32 HidEventType;
 
+    struct Plr
+    {
+        u32 dword0;
+        u16 word4;
+        u32 dword6;
+        u32 dwordA;
+        u32 dwordE;
+    };
+
     struct PlrStatistics
     {
+        u32 dword0;
+        Plr plrs[8];
+    };
+
+    struct PACKED ChannelMapSub
+    {
+        u32 dword0;
+        u16 word4;
+        //could be another struct below
+
+        u64 qword6;
+        u16 wordE;
+        u8 byteF;
     };
 
     struct ChannelMap
     {
+        ChannelMapSub sub[7];
     };
 
     struct LeConnectionParamsImpl

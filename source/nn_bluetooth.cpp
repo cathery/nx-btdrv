@@ -392,6 +392,7 @@ namespace nn::bluetooth
     Result GetLatestPlr(PlrStatistics* out)
     {
         //TODO: test
+        static_assert(sizeof(PlrStatistics) == 0xA4, "GetLatestPlr: PlrStatistics has incorrect size");
         return btdrvDispatch(
             39,
             .buffer_attrs = {SfBufferAttr_Out | SfBufferAttr_HipcMapAlias | SfBufferAttr_FixedSize},
@@ -406,7 +407,9 @@ namespace nn::bluetooth
 
     Result GetChannelMap(ChannelMap* out)
     {
+
         //TODO: test
+        static_assert(sizeof(ChannelMap) == 0x77, "GetChannelMap: ChannelMap has incorrect size");
         return btdrvDispatch(
             41,
             .buffer_attrs = {SfBufferAttr_Out | SfBufferAttr_HipcMapAlias | SfBufferAttr_FixedSize},
