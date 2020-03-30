@@ -252,7 +252,13 @@ namespace nn::bluetooth
 
     typedef Result BluetoothFatalReason;
 
-    typedef u32 BluetoothHhReportType;
+    // Basic report types, may not be accurate
+    enum class BluetoothHhReportType : u32
+    {
+        INPUT = 0x01,
+        OUTPUT = 0x02,
+        FEATURE = 0x03,
+    };
 
     void InitializeBluetoothDriverByDfc();
     Result InitializeBluetoothDriver();
@@ -295,13 +301,12 @@ namespace nn::bluetooth
 
     // Bluetooth hidhost functions
 
+    //Seems to go off when an HID device is connected?
     Result InitializeHid(Event* out, u16 unk);
     Result HidConnect(Address const* address);
     Result HidDisconnect(Address const* address);
-    // PROBABLY DOESN'T WORK
     Result HidSendData(Address const* address, HidData const* data);
-    // PROBABLY WORKS
-    Result HidSendData2(Address const* address, HidData const* out);
+    Result HidSendData2(Address const* address, HidData const* data);
     Result HidSetReport(Address const* address, BluetoothHhReportType reportType, HidData const* buffer);
     Result HidGetReport(Address const* address, BluetoothHhReportType reportType, u8 unk);
     Result HidWakeController(Address const* address, u16 propSetting);

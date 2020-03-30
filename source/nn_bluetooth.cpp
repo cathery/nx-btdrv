@@ -171,8 +171,8 @@ namespace nn::bluetooth
         Handle tmp_handle = INVALID_HANDLE;
         Result rc;
 
-        rc = btdrvDispatch(
-            16,
+        rc = btdrvDispatchIn(
+            16, unk,
             .out_handle_attrs = {SfOutHandleAttr_HipcCopy},
             .out_handles = &tmp_handle);
 
@@ -193,7 +193,6 @@ namespace nn::bluetooth
 
     Result HidSendData(Address const* address, HidData const* out)
     {
-        //TODO: make sure the buffer is sent correctly
         return btdrvDispatchIn(
             19, *address,
             .buffer_attrs = {SfBufferAttr_In | SfBufferAttr_HipcPointer | SfBufferAttr_FixedSize},
@@ -202,8 +201,6 @@ namespace nn::bluetooth
 
     Result HidSendData2(Address const* address, HidData const* out)
     {
-        //TODO: make sure the buffer is sent correctly
-
         return btdrvDispatchIn(
             20, *address,
             .buffer_attrs = {SfBufferAttr_In | SfBufferAttr_HipcPointer},
@@ -212,7 +209,6 @@ namespace nn::bluetooth
 
     Result HidSetReport(Address const* address, BluetoothHhReportType reportType, HidData const* buffer)
     {
-        //TODO: make sure the buffer is sent correctly
         struct
         {
             Address address;
