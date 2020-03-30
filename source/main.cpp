@@ -34,10 +34,16 @@ struct XboxOneRumbleData
 
 int main()
 {
+    Event register_hid_report_event;
+    Event hid_report_event;
+    Event hid_event;
+    Event bt_event;
     consoleInit(nullptr);
-    printf("Initialize bluetooth driver: 0x%x\n", nn::bluetooth::InitializeBluetoothDriver());
-
-    //printf("nn::bluetooth::ExtSetVisibility: 0x%x\n", nn::bluetooth::ExtSetVisibility(false, false));
+    printf("nn::bluetooth::InitializeBluetoothDriver: 0x%x\n", nn::bluetooth::InitializeBluetoothDriver());
+    printf("nn::bluetooth::InitializeBluetooth: 0x%x\n", nn::bluetooth::InitializeBluetooth(&bt_event));
+    printf("nn::bluetooth::InitializeHid: 0x%x\n", nn::bluetooth::InitializeHid(&hid_event, 0));
+    printf("nn::bluetooth::RegisterHidReportEvent: 0x%x\n", nn::bluetooth::RegisterHidReportEvent(&register_hid_report_event));
+    printf("nn::bluetooth::HidGetReportEventInfo: 0x%x\n", nn::bluetooth::HidGetReportEventInfo(&hid_report_event));
 
     while (appletMainLoop())
     {
@@ -64,56 +70,96 @@ int main()
             printf("nn::bluetooth::RemoveBond: 0x%x\n", nn::bluetooth::RemoveBond(&currMac));
         }
 
+        if (kDown & KEY_Y)
+        {
+            printf("nn::bluetooth::CancelBond: 0x%x\n", nn::bluetooth::CancelBond(&currMac));
+        }
+
         if (kDown & KEY_DRIGHT)
         {
             printf("nn::bluetooth::HidConnect: 0x%x\n", nn::bluetooth::HidConnect(&currMac));
         }
 
-        if (kDown & KEY_DUP)
+        if (kDown & KEY_DLEFT)
         {
             printf("nn::bluetooth::HidDisconnect: 0x%x\n", nn::bluetooth::HidDisconnect(&currMac));
         }
 
-        if (kDown & KEY_DDOWN)
+        if (kDown & KEY_MINUS)
         {
-            /*
-            constexpr u8 strong_magnitude = 0xFF;
+            constexpr bool rumble_motors_enabled = true;
             constexpr u8 weak_magnitude = 0xFF;
+            constexpr u8 strong_magnitude = 0xFF;
+            constexpr u8 led_R = 0x69;
+            constexpr u8 led_G = 0x12;
+            constexpr u8 led_B = 0xFF;
 
-            constexpr u8 rumble_data[]{
-                0x09, 0x00, 0x00,
-                0x09, 0x00, 0x0f, 0x00, 0x00,
-                strong_magnitude,
-                weak_magnitude,
-                0xff, 0x00, 0x00};
-            */
-
-            constexpr u8 ledValueR = 0x00;
-            constexpr u8 ledValueG = 0x00;
-            constexpr u8 ledValueB = 0x00;
-
-            constexpr u8 initds4[32] = {
-                0x05, 0x07, 0x00, 0x00,
-                0x00, 0x00,                      //initial strong and weak rumble
-                ledValueR, ledValueG, ledValueB, //LED color
-                0x00, 0x00};
+            u8 report[79] = {0xA2,       // transaction type | report type
+                             0x11,       // report ID
+                             0xc0, 0x20, // unknown
+                             rumble_motors_enabled ? 0xf3 : 0xf0,
+                             0x04, 0x00, // unknown
+                             weak_magnitude, strong_magnitude,
+                             led_R, led_G, led_B};
+            *reinterpret_cast<u32*>(&report[75]) = crc32Calculate(report, 75);
 
             nn::bluetooth::HidData data{};
 
-            data.size = sizeof(initds4);
-            memcpy(data.buffer, initds4, data.size);
+            // we want to substract the report type byte from the packet
+            data.size = sizeof(report) - 1;
+            memcpy(data.buffer, report + 1, data.size);
 
-            printf("nn::bluetooth::HidSendData2: 0x%x\n", nn::bluetooth::HidSendData2(&currMac, &data));
+            // This one doesn't care about first byte or CRC32 as long as the packet is correct and report type is OUTPUT
+            printf("nn::bluetooth::HidSetReport: 0x%x\n", nn::bluetooth::HidSetReport(&currMac, nn::bluetooth::BluetoothHhReportType::OUTPUT, &data));
+
+            // These ones don't work unless the first byte is 0xA2 and CRC32 matches the packet
+            //printf("nn::bluetooth::HidSendData2: 0x%x\n", nn::bluetooth::HidSendData2(&currMac, &data));
+            //printf("nn::bluetooth::HidSendData: 0x%x\n", nn::bluetooth::HidSendData(&currMac, &data));
         }
 
         if (kDown & KEY_L)
         {
-            printf("nn::bluetooth::HidGetReport: 0x%x\n", nn::bluetooth::HidGetReport(&currMac, 0, 0));
+            printf("nn::bluetooth::HidGetReport: 0x%x\n", nn::bluetooth::HidGetReport(&currMac, nn::bluetooth::BluetoothHhReportType::INPUT, 0));
+        }
+
+        if (kDown & KEY_DUP)
+            printf("nn::bluetooth::StartDiscovery: 0x%x\n", nn::bluetooth::StartDiscovery());
+
+        if (kDown & KEY_DDOWN)
+            printf("nn::bluetooth::CancelDiscovery: 0x%x\n", nn::bluetooth::CancelDiscovery());
+
+        if (R_SUCCEEDED(eventWait(&register_hid_report_event, 0)))
+        {
+            printf("Register HID Report Event went off!\n");
+            eventClear(&register_hid_report_event);
+        }
+
+        if (R_SUCCEEDED(eventWait(&hid_report_event, 0)))
+        {
+            printf("HID Report Event went off!\n");
+            eventClear(&hid_report_event);
+        }
+
+        if (R_SUCCEEDED(eventWait(&hid_event, 0)))
+        {
+            printf("HID Event went off!\n");
+            eventClear(&hid_event);
+        }
+
+        if (R_SUCCEEDED(eventWait(&bt_event, 0)))
+        {
+            printf("Bluetooth Event went off!\n");
+            eventClear(&bt_event);
         }
 
         consoleUpdate(NULL);
     }
     consoleExit(nullptr);
+
+    eventClose(&register_hid_report_event);
+    eventClose(&hid_report_event);
+    eventClose(&hid_event);
+    eventClose(&bt_event);
 
     nn::bluetooth::FinalizeBluetoothDriver();
 }
