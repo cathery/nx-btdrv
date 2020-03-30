@@ -20,9 +20,9 @@ namespace nn::settings::system
         Uuid uuid;
         u8 byte_x39;
         u16 word_x3A;
-        u32 dword_x3C;
-        u16 word_x40;
-        u16 word_x42;
+        u32 flags_maybe;
+        u16 vendor_ID;
+        u16 product_ID;
         u8 byte_x44;
         u8 byte_x45;
         u16 callbacks_size;
