@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <switch.h>
 
 namespace nn::bluetooth
@@ -315,7 +316,8 @@ namespace nn::bluetooth
     Result CleanupHid();
     Result HidGetEventInfo(HidEventType* out, u8* outBuffer, u16 bufferSize);
     Result RegisterHidReportEvent(Event* outEvent);
-    Result HidGetReportEventInfo(Event* outEvent);
+    //this returns a shared mem pointer to a circular buffer
+    Result HidGetReportEventInfo(void** shmemAddr);
 
     // Bluetooth extension functions
 
@@ -414,17 +416,50 @@ namespace nn::bluetooth
         Result GetLeEventInfo(BleEventType*, u8* buffer, u16);
     } // namespace user
 
+#define CIRCBUF_SIZE 10000
+
     class CircularBuffer
     {
-    private:
     public:
-        CircularBuffer() {}
+        enum CircularBufferType : u32
+        {
+            CB_HID_REPORT = 0x1,
+            CB_BLUETOOTH = 0x2,
+            CB_BLE = 0x3,
+            CB_BLE_CORE = 0x4,
+            CB_BLE_HID = 0x5,
+        };
+
+    private:
+        Mutex section;
+        u8 gap4[4];
+        Event* eventPointer;
+        u8 buffer[CIRCBUF_SIZE];
+        std::atomic<s32> writeOffset; //tail
+        std::atomic<s32> readOffset;  //head
+        u64 bufferSize;
+        char name[16];
+        bool some_bool_maybe;
+        bool initialized;
+        u32 dword2742;
+        u32 cb_bufferType;
+        CircularBufferType bufferType;
+        bool readyFlag;
+
+    public:
+        CircularBuffer();
+        void Initialize(char* name, Event* event);
         bool IsInitialized();
         u64 GetWriteableSize();
-        u32 _getWriteOffset();
-        u32 _getReadOffset();
+        s32 _getWriteOffset();
+        s32 _getReadOffset();
         u32 Write(u8, const void*, u64);
-        u32 _write(u8, const void*, u64);
+        int _write(u8, const void*, u64);
+        u64 Read();
+        u64 _read();
+        u32 Free();
+        void DiscardOldPackets(u8, u32);
+
         CircularBuffer _updateUtilization();
     };
 

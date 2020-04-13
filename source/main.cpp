@@ -32,18 +32,30 @@ struct XboxOneRumbleData
     uint8_t extra;
 };
 
+struct HidReportSharedMem
+{
+    u8 unk[0x3000];
+};
+
 int main()
 {
     Event register_hid_report_event;
     Event hid_report_event;
+    void* shmem;
+    nn::bluetooth::CircularBuffer circbuf;
+    circbuf.GetWriteableSize();
+    circbuf.Read();
+    static HidReportSharedMem shmem_copy;
     Event hid_event;
     Event bt_event;
     consoleInit(nullptr);
     printf("nn::bluetooth::InitializeBluetoothDriver: 0x%x\n", nn::bluetooth::InitializeBluetoothDriver());
-    printf("nn::bluetooth::InitializeBluetooth: 0x%x\n", nn::bluetooth::InitializeBluetooth(&bt_event));
+    //printf("nn::bluetooth::InitializeBluetooth: 0x%x\n", nn::bluetooth::InitializeBluetooth(&bt_event));
     printf("nn::bluetooth::InitializeHid: 0x%x\n", nn::bluetooth::InitializeHid(&hid_event, 0));
     printf("nn::bluetooth::RegisterHidReportEvent: 0x%x\n", nn::bluetooth::RegisterHidReportEvent(&register_hid_report_event));
-    printf("nn::bluetooth::HidGetReportEventInfo: 0x%x\n", nn::bluetooth::HidGetReportEventInfo(&hid_report_event));
+    printf("nn::bluetooth::HidGetReportEventInfo: 0x%x\n", nn::bluetooth::HidGetReportEventInfo(&shmem));
+
+    memcpy(&shmem_copy, shmem, sizeof(HidReportSharedMem));
 
     while (appletMainLoop())
     {
@@ -90,9 +102,9 @@ int main()
             constexpr bool rumble_motors_enabled = true;
             constexpr u8 weak_magnitude = 0xFF;
             constexpr u8 strong_magnitude = 0xFF;
-            constexpr u8 led_R = 0x69;
-            constexpr u8 led_G = 0x12;
-            constexpr u8 led_B = 0xFF;
+            constexpr u8 led_R = 0;
+            constexpr u8 led_G = 0;
+            constexpr u8 led_B = 0;
 
             u8 report[79] = {0xA2,       // transaction type | report type
                              0x11,       // report ID
@@ -101,6 +113,7 @@ int main()
                              0x04, 0x00, // unknown
                              weak_magnitude, strong_magnitude,
                              led_R, led_G, led_B};
+            // the last 4 bytes are the crc32 of the entire packet before it, so we do a little hack to write it as a u32 (stored in little endian)
             *reinterpret_cast<u32*>(&report[75]) = crc32Calculate(report, 75);
 
             nn::bluetooth::HidData data{};
@@ -117,9 +130,37 @@ int main()
             //printf("nn::bluetooth::HidSendData: 0x%x\n", nn::bluetooth::HidSendData(&currMac, &data));
         }
 
+        if (kDown & KEY_ZL)
+        {
+            nn::settings::system::BluetoothDevicesSettings buffer{};
+            printf("nn::bluetooth::HidGetPairedDevice: 0x%x\n", nn::bluetooth::HidGetPairedDevice(&currMac, &buffer));
+            printf("word_x26: 0x%x\n", buffer.word_x26);
+            printf("byte_x28: 0x%x\n", buffer.byte_x28);
+            printf("byte_x39: 0x%x\n", buffer.byte_x39);
+            printf("word_x3A: 0x%x\n", buffer.word_x3A);
+            printf("flags_maybe: 0x%x\n", buffer.flags_maybe);
+            printf("word_x40: 0x%x\n", buffer.vendor_ID);
+            printf("product_ID: 0x%x\n", buffer.product_ID);
+            printf("byte_x44: 0x%x\n", buffer.byte_x44);
+            printf("byte_x45: 0x%x\n", buffer.byte_x45);
+            printf("callbacks_size: 0x%x\n", buffer.callbacks_size);
+        }
+
         if (kDown & KEY_L)
         {
-            printf("nn::bluetooth::HidGetReport: 0x%x\n", nn::bluetooth::HidGetReport(&currMac, nn::bluetooth::BluetoothHhReportType::INPUT, 0));
+            printf("nn::bluetooth::HidGetReport: 0x%x\n", nn::bluetooth::HidGetReport(&currMac, nn::bluetooth::BluetoothHhReportType::INPUT, 0x01));
+        }
+
+        if (true)
+        {
+            HidReportSharedMem* hidShmem = static_cast<HidReportSharedMem*>(shmem);
+            //constexpr u64 curr_index = 0x00;
+            for (u64 i = 0; i != sizeof(HidReportSharedMem); ++i)
+            {
+                if (hidShmem->unk[i] != shmem_copy.unk[i])
+                    printf("i%02lX: %02X\n", i, hidShmem->unk[i]);
+            }
+            memcpy(&shmem_copy, shmem, sizeof(HidReportSharedMem));
         }
 
         if (kDown & KEY_DUP)
@@ -130,7 +171,7 @@ int main()
 
         if (R_SUCCEEDED(eventWait(&register_hid_report_event, 0)))
         {
-            printf("Register HID Report Event went off!\n");
+            //printf("Register HID Report Event went off!\n");
             eventClear(&register_hid_report_event);
         }
 
