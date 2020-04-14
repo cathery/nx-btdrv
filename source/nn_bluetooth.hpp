@@ -430,6 +430,16 @@ namespace nn::bluetooth
             CB_BLE_HID = 0x5,
         };
 
+        // Only use this to cast pointers. You will never need a buffer this large
+        struct Packet
+        {
+            u8 packetType;
+            u8 padding[7];
+            u64 packetTick;
+            u64 bufferSize;
+            u8 buffer[CIRCBUF_SIZE];
+        };
+
     private:
         Mutex section;
         u8 gap4[4];
@@ -455,8 +465,8 @@ namespace nn::bluetooth
         s32 _getReadOffset();
         u32 Write(u8, const void*, u64);
         int _write(u8, const void*, u64);
-        u64 Read();
-        u64 _read();
+        Packet* Read();
+        Packet* _read();
         u32 Free();
         void DiscardOldPackets(u8, u32);
 

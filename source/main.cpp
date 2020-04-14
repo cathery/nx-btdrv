@@ -42,9 +42,6 @@ int main()
     Event register_hid_report_event;
     Event hid_report_event;
     void* shmem;
-    nn::bluetooth::CircularBuffer circbuf;
-    circbuf.GetWriteableSize();
-    circbuf.Read();
     static HidReportSharedMem shmem_copy;
     Event hid_event;
     Event bt_event;
@@ -89,12 +86,8 @@ int main()
 
         if (kDown & KEY_DRIGHT)
         {
-            printf("nn::bluetooth::HidConnect: 0x%x\n", nn::bluetooth::HidConnect(&currMac));
-        }
-
-        if (kDown & KEY_DLEFT)
-        {
             printf("nn::bluetooth::HidDisconnect: 0x%x\n", nn::bluetooth::HidDisconnect(&currMac));
+            //printf("nn::bluetooth::HidConnect: 0x%x\n", nn::bluetooth::HidConnect(&currMac));
         }
 
         if (kDown & KEY_MINUS)
@@ -164,10 +157,45 @@ int main()
         }
 
         if (kDown & KEY_DUP)
+        {
+            nn::bluetooth::CircularBuffer* circbuf = static_cast<nn::bluetooth::CircularBuffer*>(shmem);
+            nn::bluetooth::CircularBuffer::Packet* packet = circbuf->Read();
+            printf("nn::bluetooth::CircularBuffer::Read: 0x%lx\n", (u64)packet);
+            if (packet != nullptr)
+            {
+                printf("ptr + 0x00 (type): 0x%x\n", packet->packetType);
+                printf("ptr + 0x08 (tick): 0x%lx\n", packet->packetTick);
+                printf("ptr + 0x10 (size): 0x%lx\n", packet->bufferSize);
+                for (u64 i = 0; i != packet->bufferSize; ++i)
+                {
+                    printf("%02X", packet->buffer[i]);
+                }
+                printf("\n");
+            }
+        }
+
+        if (kDown & KEY_DDOWN)
+        {
+            nn::bluetooth::CircularBuffer* circbuf = static_cast<nn::bluetooth::CircularBuffer*>(shmem);
+            printf("nn::bluetooth::CircularBuffer::GetWriteableSize: 0x%lx\n", circbuf->GetWriteableSize());
+            printf("nn::bluetooth::CircularBuffer::_getReadOffset: 0x%x\n", circbuf->_getReadOffset());
+            printf("nn::bluetooth::CircularBuffer::_getWriteOffset: 0x%x\n", circbuf->_getWriteOffset());
+            printf("nn::bluetooth::CircularBuffer::IsInitialized: %x\n", circbuf->IsInitialized());
+        }
+
+        if (kDown & KEY_DLEFT)
+        {
+            nn::bluetooth::CircularBuffer* circbuf = static_cast<nn::bluetooth::CircularBuffer*>(shmem);
+            printf("nn::bluetooth::CircularBuffer::Free: %d\n", circbuf->Free());
+        }
+
+        /*
+        if (kDown & KEY_DUP)
             printf("nn::bluetooth::StartDiscovery: 0x%x\n", nn::bluetooth::StartDiscovery());
 
         if (kDown & KEY_DDOWN)
             printf("nn::bluetooth::CancelDiscovery: 0x%x\n", nn::bluetooth::CancelDiscovery());
+        */
 
         if (R_SUCCEEDED(eventWait(&register_hid_report_event, 0)))
         {

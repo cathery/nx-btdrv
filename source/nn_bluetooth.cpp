@@ -1083,6 +1083,10 @@ namespace nn::bluetooth
 
     CircularBuffer::CircularBuffer()
     {
+        static_assert(offsetof(CircularBuffer, writeOffset) == 0x2720, "Invalid CircularBuffer variable offset");
+        static_assert(offsetof(CircularBuffer, readOffset) == 0x2724, "Invalid CircularBuffer variable offset");
+        static_assert(offsetof(CircularBuffer, initialized) == 0x2741, "Invalid CircularBuffer variable offset");
+
         this->writeOffset = 0;
         this->readOffset = 0;
         this->initialized = 0;
@@ -1128,34 +1132,36 @@ namespace nn::bluetooth
         return 0;
     }
 
-    u64 CircularBuffer::Read()
+    CircularBuffer::Packet* CircularBuffer::Read()
     {
         if (!this->initialized)
-            return 0;
+            return nullptr;
 
         do
         {
             s32 readPos = this->readOffset;
             s32 writePos = this->writeOffset;
             if (writePos == readPos)
-                return 0;
+                return nullptr;
 
             if (this->buffer[readPos] != 0xFF)
-                return reinterpret_cast<u64>(this) + readPos;
+                // this returns (this + readPos + 0x10), instead of SDK's (this + readPos)
+                return (Packet*)(&this->buffer[readPos]);
 
             if (!this->initialized)
-                return 0;
+                return nullptr;
 
             writePos = this->writeOffset;
             readPos = this->readOffset;
             if (writePos != readPos)
             {
-                u64 currentBufferValue = *reinterpret_cast<u64*>(&this->buffer[readPos + 0x10]);
-                u64 idk = currentBufferValue + readPos + 0x18;
-                readPos += writePos + 0x18;
+                Packet* currentPacket = (Packet*)(&(this->buffer[readPos]));
+                u64 nextReadPos = currentPacket->bufferSize + readPos + 0x18;
 
-                if (idk >= CIRCBUF_SIZE)
+                if (nextReadPos >= CIRCBUF_SIZE)
                     readPos = 0;
+                else
+                    readPos = readPos + writePos + 0x18;
 
                 if (readPos >= CIRCBUF_SIZE)
                     fatalThrow(0x1);
@@ -1163,37 +1169,39 @@ namespace nn::bluetooth
                 this->readOffset = readPos;
             }
         } while (this->initialized);
-        return 0;
+        return nullptr;
     }
 
-    u64 CircularBuffer::_read()
+    CircularBuffer::Packet* CircularBuffer::_read()
     {
         if (!this->initialized)
-            return 0;
+            return nullptr;
 
         do
         {
             s32 readPos = this->readOffset;
             s32 writePos = this->writeOffset;
             if (writePos == readPos)
-                return 0;
+                return nullptr;
 
             if (this->buffer[readPos] != 0xFF)
-                return reinterpret_cast<u64>(this) + readPos;
+                // this returns (this + readPos + 0x10), instead of SDK's (this + readPos)
+                return (Packet*)(&this->buffer[readPos]);
 
             if (!this->initialized)
-                return 0;
+                return nullptr;
 
             writePos = this->writeOffset;
             readPos = this->readOffset;
             if (writePos != readPos)
             {
-                u64 currentBufferValue = *reinterpret_cast<u64*>(&this->buffer[readPos + 0x10]);
-                u64 idk = currentBufferValue + readPos + 0x18;
-                readPos += writePos + 0x18;
+                Packet* currentPacket = (Packet*)(&(this->buffer[readPos]));
+                u64 nextReadPos = currentPacket->bufferSize + readPos + 0x18;
 
-                if (idk >= CIRCBUF_SIZE)
+                if (nextReadPos >= CIRCBUF_SIZE)
                     readPos = 0;
+                else
+                    readPos = readPos + writePos + 0x18;
 
                 if (readPos >= CIRCBUF_SIZE)
                     fatalThrow(0x1);
@@ -1201,7 +1209,7 @@ namespace nn::bluetooth
                 this->readOffset = readPos;
             }
         } while (this->initialized);
-        return 0;
+        return nullptr;
     }
 
     s32 CircularBuffer::_getWriteOffset()
@@ -1216,29 +1224,30 @@ namespace nn::bluetooth
 
     u32 CircularBuffer::Free()
     {
-        if (this->initialized)
+        if (!this->initialized)
             return -1;
 
         s32 readPos = this->readOffset;
         s32 writePos = this->writeOffset;
-        if (readPos == writeOffset)
+        if (readPos == writePos)
             return -1;
 
-        u64 currentBufferValue = *reinterpret_cast<u64*>(&this->buffer[readPos + 0x10]);
-        u64 idk = currentBufferValue + readPos + 0x18;
-        readPos += currentBufferValue + 0x18;
+        Packet* currentPacket = (Packet*)(&(this->buffer[readPos]));
+        u64 nextReadPos = currentPacket->bufferSize + readPos + 0x18;
 
-        if (idk >= CIRCBUF_SIZE)
+        if (nextReadPos >= CIRCBUF_SIZE)
             readPos = 0;
-
-        if (readPos >= CIRCBUF_SIZE)
-            fatalThrow(0x1);
+        else
+            readPos = nextReadPos;
 
         this->readOffset = readPos;
+        return 0;
     }
 
     void CircularBuffer::DiscardOldPackets(u8 a2, u32 a3)
     {
+        // Massive TODO
+        /*
         if (!this->initialized)
             return;
 
@@ -1249,26 +1258,45 @@ namespace nn::bluetooth
             if (writePos == readPos)
                 break;
 
-            if (this->buffer[readPos] != 0xFF)
+            u8 bufferValue = this->buffer[readPos];
+
+            if (bufferValue != 0xFF)
             {
+                if (bufferValue != a2)
+                    break;
+
+                u64 tick = armGetSystemTick();
+                //nn::os::ConvertToTimeSpan(nn::os::GetSystemTick() - *(u64*)(&this->buffer[readPos + 8]))
+
                 //TODO
             }
-            //TODO
-        } while (true);
+            if (!this->initialized)
+                break;
+
+            writePos = this->writeOffset;
+            readPos = this->readOffset;
+
+            if (writePos != readPos)
+            {
+            }
+
+        } while (this->initialized);
+        */
     }
 
     int CircularBuffer::_write(u8 a2, const void* buffer, u64 size)
     {
         s32 writePos = this->writeOffset;
-        this->buffer[writePos] = a2;
-        u64* writePointer = (u64*)(&this->buffer[writePos + 8]);
-        writePointer[0] = armGetSystemTick();
-        writePointer[1] = size;
+        Packet* writePointer = (Packet*)(&this->buffer[writePos]);
+
+        writePointer->packetType = a2;
+        writePointer->packetTick = armGetSystemTick();
+        writePointer->bufferSize = size;
         if (a2 != 0xFF)
         {
             if (buffer && size)
             {
-                memcpy(&writePointer[3], buffer, size);
+                memcpy(writePointer->buffer, buffer, size);
             }
             else if (!buffer && size)
             {
