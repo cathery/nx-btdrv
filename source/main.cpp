@@ -32,6 +32,45 @@ struct XboxOneRumbleData
     uint8_t extra;
 };
 
+struct Ds4Report01
+{
+    uint8_t stick_left_x;
+    uint8_t stick_left_y;
+    uint8_t stick_right_x;
+    uint8_t stick_right_y;
+    uint8_t dpad : 4;
+    bool square : 1;
+    bool cross : 1;
+    bool circle : 1;
+    bool triangle : 1;
+    bool l1 : 1;
+    bool r1 : 1;
+    bool l2 : 1;
+    bool r2 : 1;
+    bool share : 1;
+    bool options : 1;
+    bool l3 : 1;
+    bool r3 : 1;
+    bool psbutton : 1;
+    bool touchpad_press : 1;
+    uint8_t sequence_number : 6;
+    uint8_t l2_pressure;
+    uint8_t r2_pressure;
+    uint8_t idk[3];
+};
+static_assert(sizeof(Ds4Report01) == 12, "Ds4Report01: incorrect size");
+
+struct HidReportPacket
+{
+    u8 unk[5];
+    nn::bluetooth::Address mac;
+    u8 unk1;
+    u8 transactionType;
+    u8 unk2;
+    u8 reportType;
+    u8 report[10000];
+};
+
 struct HidReportSharedMem
 {
     u8 unk[0x3000];
@@ -42,7 +81,6 @@ int main()
     Event register_hid_report_event;
     Event hid_report_event;
     void* shmem;
-    static HidReportSharedMem shmem_copy;
     Event hid_event;
     Event bt_event;
     consoleInit(nullptr);
@@ -51,8 +89,6 @@ int main()
     printf("nn::bluetooth::InitializeHid: 0x%x\n", nn::bluetooth::InitializeHid(&hid_event, 0));
     printf("nn::bluetooth::RegisterHidReportEvent: 0x%x\n", nn::bluetooth::RegisterHidReportEvent(&register_hid_report_event));
     printf("nn::bluetooth::HidGetReportEventInfo: 0x%x\n", nn::bluetooth::HidGetReportEventInfo(&shmem));
-
-    memcpy(&shmem_copy, shmem, sizeof(HidReportSharedMem));
 
     while (appletMainLoop())
     {
@@ -146,32 +182,22 @@ int main()
 
         if (true)
         {
-            HidReportSharedMem* hidShmem = static_cast<HidReportSharedMem*>(shmem);
-            //constexpr u64 curr_index = 0x00;
-            for (u64 i = 0; i != sizeof(HidReportSharedMem); ++i)
-            {
-                if (hidShmem->unk[i] != shmem_copy.unk[i])
-                    printf("i%02lX: %02X\n", i, hidShmem->unk[i]);
-            }
-            memcpy(&shmem_copy, shmem, sizeof(HidReportSharedMem));
-        }
-
-        if (kDown & KEY_DUP)
-        {
             nn::bluetooth::CircularBuffer* circbuf = static_cast<nn::bluetooth::CircularBuffer*>(shmem);
             nn::bluetooth::CircularBuffer::Packet* packet = circbuf->Read();
-            printf("nn::bluetooth::CircularBuffer::Read: 0x%lx\n", (u64)packet);
             if (packet != nullptr)
             {
-                printf("ptr + 0x00 (type): 0x%x\n", packet->packetType);
                 printf("ptr + 0x08 (tick): 0x%lx\n", packet->packetTick);
-                printf("ptr + 0x10 (size): 0x%lx\n", packet->bufferSize);
-                for (u64 i = 0; i != packet->bufferSize; ++i)
-                {
-                    printf("%02X", packet->buffer[i]);
-                }
-                printf("\n");
+                HidReportPacket* hidPacket = (HidReportPacket*)packet->buffer;
+                Ds4Report01* report = (Ds4Report01*)hidPacket->report;
+                printf("ds4 mac address: %d\n", hidPacket->mac == currMac);
+                printf("lsX: %02X, lsY: %02X, rsX: %02X, rsY, %02X\n"
+                       "dpad: %u, square: %u, cross: %u, circle: %u, triangle: %u\n"
+                       "L1: %u, R1: %u, L2: %u, R2: %u, Share: %u, Options: %u, L3: %u, R3: %u\n",
+                       report->stick_left_x, report->stick_left_y, report->stick_right_x, report->stick_right_y,
+                       report->dpad, report->square, report->cross, report->circle, report->triangle,
+                       report->l1, report->r1, report->l2, report->r2, report->share, report->options, report->l3, report->r3);
             }
+            circbuf->Free();
         }
 
         if (kDown & KEY_DDOWN)
