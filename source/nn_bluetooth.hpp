@@ -7,6 +7,16 @@ namespace nn::bluetooth
     struct Address
     {
         u8 mac[6];
+
+        bool operator==(const nn::bluetooth::Address& a2)
+        {
+            return mac[0] == a2.mac[0] &&
+                   mac[1] == a2.mac[1] &&
+                   mac[2] == a2.mac[2] &&
+                   mac[3] == a2.mac[3] &&
+                   mac[4] == a2.mac[4] &&
+                   mac[5] == a2.mac[5];
+        }
     };
 }; // namespace nn::bluetooth
 
@@ -470,7 +480,7 @@ namespace nn::bluetooth
         u32 Free();
         void DiscardOldPackets(u8, u32);
 
-        CircularBuffer _updateUtilization();
+        void _updateUtilization();
     };
 
     Result InitializeBle();

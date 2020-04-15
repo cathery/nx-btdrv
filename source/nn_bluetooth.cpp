@@ -1315,4 +1315,26 @@ namespace nn::bluetooth
         return 0;
     }
 
+    void CircularBuffer::_updateUtilization()
+    {
+        s32 writePos = this->writeOffset;
+        s32 readPos = this->readOffset;
+        u64 nextBufferSize;
+        if (this->initialized)
+        {
+            if (readPos <= writePos)
+                nextBufferSize = CIRCBUF_SIZE - 1 - writePos + readPos;
+            else
+                nextBufferSize = readPos + ~writePos;
+
+            if (nextBufferSize >= CIRCBUF_SIZE)
+                nextBufferSize = 0;
+
+            if (nextBufferSize + 1000 < this->bufferSize)
+                this->bufferSize = nextBufferSize;
+        }
+        else if (this->bufferSize > 1000)
+            this->bufferSize = 0;
+    }
+
 } // namespace nn::bluetooth
