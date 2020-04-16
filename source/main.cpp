@@ -197,7 +197,9 @@ int main()
                        report->dpad, report->square, report->cross, report->circle, report->triangle,
                        report->l1, report->r1, report->l2, report->r2, report->share, report->options, report->l3, report->r3);
             }
-            circbuf->Free();
+            while (circbuf->Free() != -1)
+            {
+            }
         }
 
         if (kDown & KEY_DDOWN)
